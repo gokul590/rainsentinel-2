@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RainSentinel — Multi-Hazard Weather Prediction & Decision Support</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topnav">
+  <div class="nav-inner">
+    <div class="brand"><span class="dot"></span>RainSentinel</div>
+    <nav class="links" id="navLinks"></nav>
+    <div class="nav-status">
+      <button class="icon-btn" id="voiceNavBtn" onclick="toggleVoiceListening()" title="Voice command" aria-label="Voice command">🎙️</button>
+      <button class="icon-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle dark / light mode" aria-label="Toggle dark or light mode">🌙</button>
+      <div class="live-chip"><span class="lc-dot" id="clockDot"></span><span id="clockReadout">--:--:--</span></div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- ========================= HOME ========================= -->
+<section class="view active" id="view-home">
+  <div class="hero">
+    <div class="isobars" id="isobarBg"></div>
+    <div class="hero-grid">
+      <div>
+        <div class="eyebrow">Multi-hazard early warning · decision support</div>
+        <h1>Predict. Explain.<br>Warn. Support.</h1>
+        <p>RainSentinel turns rainfall, atmospheric, and soil signals into flood, crop, and storm risk — with a transparent trail from raw weather data to the recommendation on screen.</p>
+        <div class="pipeline">
+          <span><b>01</b> Live &amp; manual weather input</span>
+          <span><b>02</b> Risk scoring engine</span>
+          <span><b>03</b> Explainability</span>
+          <span><b>04</b> Early warning</span>
+          <span><b>05</b> Farmer advisory</span>
+        </div>
+        <div style="margin-top:28px;display:flex;gap:12px;flex-wrap:wrap;">
+          <button class="btn primary" onclick="go('dashboard')">Open dashboard →</button>
+          <button class="btn ghost" onclick="go('live')">Check live weather</button>
+        </div>
+      </div>
+      <div class="mini-readout">
+        <div class="card-label" style="margin-bottom:12px;">System snapshot</div>
+        <div class="row"><span class="k">Active location</span><span class="v" id="homeLoc">Chennai, TN</span></div>
+        <div class="row"><span class="k">Overall hazard</span><span class="v" id="homeHazard">—</span></div>
+        <div class="row"><span class="k">Flood risk</span><span class="v" id="homeFlood">—</span></div>
+        <div class="row"><span class="k">Crop risk</span><span class="v" id="homeCrop">—</span></div>
+        <div class="row"><span class="k">Model source</span><span class="v" id="homeSource">Demo heuristic</span></div>
+        <button class="btn" style="width:100%;margin-top:16px;" onclick="go('prediction')">Run a prediction</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:repeat(4,1fr);">
+    <div class="card" style="cursor:pointer" onclick="go('live')"><div class="card-label">Live Weather</div><h3>Real-time conditions</h3><p style="color:var(--text-1);font-size:13px;margin:6px 0 0;">Temperature, rainfall, wind, pressure by location.</p></div>
+    <div class="card" style="cursor:pointer" onclick="go('map')"><div class="card-label">Risk Map</div><h3>Multi-hazard heatmap</h3><p style="color:var(--text-1);font-size:13px;margin:6px 0 0;">Flood, crop and storm risk across districts.</p></div>
+    <div class="card" style="cursor:pointer" onclick="go('warning')"><div class="card-label">Early Warning</div><h3>Alert center</h3><p style="color:var(--text-1);font-size:13px;margin:6px 0 0;">System-generated alerts by hazard type.</p></div>
+    <div class="card" style="cursor:pointer" onclick="go('whatif')"><div class="card-label">What-If</div><h3>Scenario simulator</h3><p style="color:var(--text-1);font-size:13px;margin:6px 0 0;">Test how changing inputs shifts hazard level.</p></div>
+  </div>
+</section>
+
+<!-- ========================= DASHBOARD ========================= -->
+<section class="view" id="view-dashboard">
+  <div class="eyebrow">Overview</div>
+  <h1 class="page-title">Dashboard</h1>
+  <p class="page-sub">A single view of current conditions, the week ahead, and where risk is concentrated.</p>
+
+  <div class="grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
+    <div class="card"><div class="card-label">Current temperature</div><div class="stat-num" id="dbTemp">—<span class="stat-unit">°C</span></div></div>
+    <div class="card"><div class="card-label">Today's rainfall</div><div class="stat-num" id="dbRain">—<span class="stat-unit">mm</span></div></div>
+    <div class="card"><div class="card-label">Flood risk</div><div id="dbFloodBadge" class="stat-num" style="font-size:20px;">—</div></div>
+    <div class="card"><div class="card-label">Crop risk</div><div id="dbCropBadge" class="stat-num" style="font-size:20px;">—</div></div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:1.4fr 1fr;margin-bottom:20px;">
+    <div class="card">
+      <h3>7-day rainfall &amp; risk trend</h3>
+      <div class="card-label" style="margin-bottom:10px;">Forecast-derived · see Forecast page for detail</div>
+      <div class="chart-wrap short"><canvas id="dbChart"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Recent warnings</h3>
+      <div id="dbWarnings" style="margin-top:10px;display:flex;flex-direction:column;gap:10px;"></div>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:1fr 1fr;">
+    <div class="card">
+      <h3>Interactive map</h3>
+      <div class="card-label" style="margin-bottom:10px;">Tap a marker on the Risk Map page for full detail</div>
+      <div id="dbMap" style="height:220px;border-radius:10px;overflow:hidden;"></div>
+    </div>
+    <div class="card">
+      <h3>AI explanation &amp; smart advisory</h3>
+      <div class="card-label" style="margin-bottom:8px;">Top driver of current risk score</div>
+      <div id="dbExplain" style="font-family:var(--font-mono);font-size:13px;color:var(--text-1);"></div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line-soft);">
+        <div class="card-label" style="margin-bottom:8px;">Advisory</div>
+        <div id="dbAdvisory" style="font-size:13.5px;color:var(--text-1);"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= LIVE WEATHER ========================= -->
+<section class="view" id="view-live">
+  <div class="eyebrow">Real-time conditions</div>
+  <h1 class="page-title">Live Weather</h1>
+  <p class="page-sub">Pulled live from Open-Meteo's public weather service — no simulated numbers. Choose any of Tamil Nadu's 38 districts, or set exact coordinates. Say a district name aloud using the mic in the top bar for hands-free lookup.</p>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="field">
+        <label class="field-label">District / location</label>
+        <select id="liveLocationSelect"></select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field"><label class="field-label">Latitude</label><input type="number" step="0.0001" id="liveLat"></div>
+        <div class="field"><label class="field-label">Longitude</label><input type="number" step="0.0001" id="liveLon"></div>
+      </div>
+      <button class="btn primary" style="width:100%;" onclick="fetchLiveWeather()">Fetch live weather</button>
+      <div id="liveStatus" class="small-note"></div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <h3 style="margin:0;">Current conditions — <span id="liveLocLabel">Chennai</span></h3>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button class="speak-btn" onclick="speakLiveWeather()">🔊 Read aloud</button>
+          <span class="live-flag" id="liveFlag">● live</span>
+        </div>
+      </div>
+      <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:12px;">
+        <div class="card" style="padding:14px;"><div class="card-label">Temperature</div><div class="stat-num" style="font-size:22px;" id="lwTemp">—</div></div>
+        <div class="card" style="padding:14px;"><div class="card-label">Humidity</div><div class="stat-num" style="font-size:22px;" id="lwHum">—</div></div>
+        <div class="card" style="padding:14px;"><div class="card-label">Rainfall</div><div class="stat-num" style="font-size:22px;" id="lwRain">—</div></div>
+        <div class="card" style="padding:14px;"><div class="card-label">Wind speed</div><div class="stat-num" style="font-size:22px;" id="lwWind">—</div></div>
+        <div class="card" style="padding:14px;"><div class="card-label">Pressure</div><div class="stat-num" style="font-size:22px;" id="lwPress">—</div></div>
+        <div class="card" style="padding:14px;"><div class="card-label">Cloud cover</div><div class="stat-num" style="font-size:22px;" id="lwCloud">—</div></div>
+        <div class="card" style="padding:14px;grid-column:span 2;"><div class="card-label">Condition</div><div class="stat-num" style="font-size:18px;" id="lwCond">—</div></div>
+      </div>
+      <div class="small-note">Last updated: <span id="lwUpdated">—</span></div>
+      <button class="btn" style="margin-top:14px;" onclick="useLiveForPrediction()">Use this data in Live Prediction →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= PREDICTION ========================= -->
+<section class="view" id="view-prediction">
+  <div class="eyebrow">Hazard scoring</div>
+  <h1 class="page-title">Prediction Dashboard</h1>
+  <p class="page-sub">Manual entry or live-weather-driven scoring. <span class="demo-flag">● demo heuristic model — no trained backend connected</span></p>
+
+  <div class="tabs-sub">
+    <button class="active" id="predTabManual" onclick="switchPredMode('manual')">Manual prediction</button>
+    <button id="predTabLive" onclick="switchPredMode('live')">Live prediction</button>
+  </div>
+
+  <div class="two-col">
+    <div class="card" id="predInputsCard">
+      <div id="manualInputs">
+        <div class="field"><label class="field-label">Temperature (°C)</label><input type="number" id="mTemp" value="29"></div>
+        <div class="field"><label class="field-label">Humidity (%)</label><input type="number" id="mHum" value="70"></div>
+        <div class="field"><label class="field-label">Wind speed (km/h)</label><input type="number" id="mWind" value="14"></div>
+        <div class="field"><label class="field-label">Atmospheric pressure (hPa)</label><input type="number" id="mPress" value="1008"></div>
+        <div class="field"><label class="field-label">Cloud cover (%)</label><input type="number" id="mCloud" value="55"></div>
+        <div class="field"><label class="field-label">Previous rainfall (mm, 24h)</label><input type="number" id="mPrevRain" value="20"></div>
+        <div class="field"><label class="field-label">Soil moisture (%)</label><input type="number" id="mSoil" value="40"></div>
+        <button class="btn primary" style="width:100%;" onclick="runManualPrediction()">Generate prediction</button>
+      </div>
+      <div id="liveInputsNote" style="display:none;">
+        <p style="color:var(--text-1);font-size:13.5px;">Live prediction uses the most recent fetch from the Live Weather page as model input.</p>
+        <div class="mini-readout" id="livePredSnapshot" style="margin-bottom:14px;"></div>
+        <button class="btn primary" style="width:100%;" onclick="runLivePrediction()">Generate live prediction</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="grid" style="grid-template-columns:repeat(2,1fr);">
+        <div class="card"><div class="card-label">Rainfall prediction</div><div class="stat-num" id="predRainOut">—<span class="stat-unit">mm</span></div></div>
+        <div class="card"><div class="card-label">Flood risk</div><div id="predFloodOut" style="margin-top:6px;">—</div></div>
+        <div class="card"><div class="card-label">Crop damage risk</div><div id="predCropOut" style="margin-top:6px;">—</div></div>
+        <div class="card"><div class="card-label">Overall hazard level</div><div id="predOverallOut" style="margin-top:6px;">—</div></div>
+      </div>
+      <div class="card" style="margin-top:18px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h3 style="margin:0;">Score breakdown</h3>
+          <button class="speak-btn" onclick="speakLastPrediction()">🔊 Read result aloud</button>
+        </div>
+        <div class="chart-wrap short"><canvas id="predBreakdownChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= FORECAST ========================= -->
+<section class="view" id="view-forecast">
+  <div class="eyebrow">7-day outlook</div>
+  <h1 class="page-title">Weather &amp; Risk Forecast</h1>
+  <p class="page-sub">Rainfall and temperature come from live forecast data for the selected location; flood/crop risk are derived from that forecast using the same scoring engine as Prediction.</p>
+
+  <div class="tabs-sub">
+    <button class="active" data-metric="rain" onclick="setForecastMetric('rain')">Rainfall</button>
+    <button data-metric="temp" onclick="setForecastMetric('temp')">Temperature</button>
+    <button data-metric="flood" onclick="setForecastMetric('flood')">Flood risk</button>
+    <button data-metric="crop" onclick="setForecastMetric('crop')">Crop risk</button>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:10px;">
+      <h3 style="margin:0;">7-day forecast — <span id="fcLocLabel">Chennai</span></h3>
+      <button class="btn" onclick="loadForecast()">Refresh forecast</button>
+    </div>
+    <div class="chart-wrap"><canvas id="forecastChart"></canvas></div>
+  </div>
+
+  <div class="card" style="margin-top:18px;overflow-x:auto;">
+    <h3>Daily detail</h3>
+    <table id="forecastTable"><thead><tr><th>Day</th><th>Rain (mm)</th><th>Temp (°C)</th><th>Humidity (%)</th><th>Flood risk</th><th>Crop risk</th></tr></thead><tbody></tbody></table>
+  </div>
+</section>
+
+<!-- ========================= RISK MAP ========================= -->
+<section class="view" id="view-map">
+  <div class="eyebrow">Spatial view</div>
+  <h1 class="page-title">Multi-Hazard Risk Heatmap</h1>
+  <p class="page-sub">Markers are colored by combined hazard score, computed live for all 38 Tamil Nadu districts. Click a marker for its full breakdown.</p>
+
+  <div class="card">
+    <div id="riskMap"></div>
+    <div class="legend-row">
+      <span><span class="legend-dot" style="background:var(--low);"></span>Low</span>
+      <span><span class="legend-dot" style="background:var(--mod);"></span>Moderate</span>
+      <span><span class="legend-dot" style="background:var(--high);"></span>High</span>
+      <span><span class="legend-dot" style="background:var(--extreme);"></span>Extreme</span>
+      <span style="margin-left:auto;" class="small-note" id="mapUpdated"></span>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px;">
+    <h3>Selected location</h3>
+    <div id="mapSelectedDetail" class="empty-state">Click a marker on the map to see its weather data and predicted risk.</div>
+  </div>
+</section>
+
+<!-- ========================= EARLY WARNING ========================= -->
+<section class="view" id="view-warning">
+  <div class="eyebrow">Alert center</div>
+  <h1 class="page-title">Early Warning Center</h1>
+  <p class="page-sub">System-generated predictions based on current thresholds — not official emergency alerts. Always follow guidance from your local disaster management authority.</p>
+  <button class="speak-btn" style="margin-bottom:16px;" onclick="speakWarnings()">🔊 Read all warnings aloud</button>
+
+  <div id="warningList" style="display:flex;flex-direction:column;gap:14px;margin-bottom:24px;"></div>
+
+  <div class="card">
+    <h3>Alert categories monitored</h3>
+    <span class="tag-pill">Heavy Rainfall Alert</span>
+    <span class="tag-pill">Flood Alert</span>
+    <span class="tag-pill">Crop Risk Alert</span>
+    <span class="tag-pill">Severe Weather Alert</span>
+    <p class="small-note">Thresholds: Moderate ≥40, High ≥65, Extreme ≥85 on the 0–100 hazard score. Recompute on the Prediction or Risk Map pages to refresh alerts.</p>
+  </div>
+</section>
+
+<!-- ========================= WHAT-IF SIMULATOR ========================= -->
+<section class="view" id="view-whatif">
+  <div class="eyebrow">Scenario testing</div>
+  <h1 class="page-title">RainSentinel What-If Simulator</h1>
+  <p class="page-sub">Drag the inputs for two scenarios and compare how the hazard chain shifts: rainfall → flood → crop → overall.</p>
+
+  <div class="scn-compare">
+    <div class="card">
+      <h3>Scenario A</h3>
+      <div id="scnA"></div>
+    </div>
+    <div class="card">
+      <h3>Scenario B</h3>
+      <div id="scnB"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px;">
+    <h3>Comparison</h3>
+    <div class="chart-wrap short"><canvas id="scnChart"></canvas></div>
+    <div class="grid" style="grid-template-columns:repeat(2,1fr);margin-top:16px;">
+      <div><div class="card-label">Scenario A hazard</div><div id="scnAResult" style="margin-top:6px;">—</div></div>
+      <div><div class="card-label">Scenario B hazard</div><div id="scnBResult" style="margin-top:6px;">—</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= AI INSIGHTS ========================= -->
+<section class="view" id="view-insights">
+  <div class="eyebrow">Explainable AI</div>
+  <h1 class="page-title">AI Insights</h1>
+  <p class="page-sub">Why did the engine predict this risk? Feature influence below reflects the weighting used by the current demo scoring function — swap in a trained model's SHAP values here once connected.</p>
+
+  <div class="two-col">
+    <div class="card">
+      <h3>Feature importance — current prediction</h3>
+      <div id="featImportance" style="margin-top:18px;"></div>
+      <span class="demo-flag">● derived from heuristic weights, not SHAP output</span>
+    </div>
+    <div class="card">
+      <h3>Model Performance</h3>
+      <div class="card-label" style="margin-bottom:10px;">Demo data — replace with real evaluation results once a trained model is connected</div>
+      <table>
+        <thead><tr><th>Model</th><th>Task</th><th>Accuracy</th><th>F1</th><th>RMSE</th><th>R²</th></tr></thead>
+        <tbody>
+          <tr><td>Random Forest</td><td>Classification</td><td>0.87</td><td>0.85</td><td>—</td><td>—</td></tr>
+          <tr><td>XGBoost</td><td>Classification</td><td>0.89</td><td>0.88</td><td>—</td><td>—</td></tr>
+          <tr><td>LightGBM</td><td>Regression (rainfall)</td><td>—</td><td>—</td><td>4.6 mm</td><td>0.81</td></tr>
+          <tr><td>LSTM</td><td>Regression (7-day rainfall)</td><td>—</td><td>—</td><td>5.9 mm</td><td>0.74</td></tr>
+        </tbody>
+      </table>
+      <span class="demo-flag" style="margin-top:12px;">● demo values — connect ML backend to populate real metrics</span>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= HISTORY ========================= -->
+<section class="view" id="view-history">
+  <div class="eyebrow">Records</div>
+  <h1 class="page-title">Prediction History</h1>
+  <p class="page-sub">Every prediction you run in this session is logged here. Search, filter, sort, or delete entries.</p>
+
+  <div class="hist-toolbar">
+    <div class="field"><label class="field-label">Search location</label><input type="text" id="histSearch" placeholder="e.g. Chennai" oninput="renderHistory()"></div>
+    <div class="field"><label class="field-label">Filter by overall risk</label>
+      <select id="histFilter" onchange="renderHistory()">
+        <option value="">All levels</option>
+        <option>LOW</option><option>MODERATE</option><option>HIGH</option><option>EXTREME</option>
+      </select>
+    </div>
+    <div class="field"><label class="field-label">Sort by</label>
+      <select id="histSort" onchange="renderHistory()">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="risk">Highest risk first</option>
+      </select>
+    </div>
+    <button class="btn" onclick="clearHistory()">Clear all</button>
+  </div>
+
+  <div class="card" style="overflow-x:auto;">
+    <table>
+      <thead><tr><th>Date</th><th>Time</th><th>Location</th><th>Rainfall</th><th>Flood</th><th>Crop</th><th>Overall</th><th></th></tr></thead>
+      <tbody id="histBody"></tbody>
+    </table>
+    <div class="empty-state" id="histEmpty" style="display:none;margin-top:14px;">No predictions logged yet this session. Run one from the Prediction or What-If page.</div>
+  </div>
+</section>
+
+<!-- ========================= ABOUT ========================= -->
+<section class="view" id="view-about">
+  <div class="eyebrow">Project</div>
+  <h1 class="page-title">About RainSentinel</h1>
+  <p class="page-sub">Data-Driven Multi-Hazard Weather Prediction and Decision Support System.</p>
+
+  <div class="grid" style="grid-template-columns:1.3fr 1fr;">
+    <div class="card">
+      <h3>What this system does</h3>
+      <ul class="about-list">
+        <li>Ingests live weather observations and forecasts for any Indian district by coordinates.</li>
+        <li>Scores flood, crop-damage, and overall hazard risk from weather and soil signals.</li>
+        <li>Explains each score with feature-level influence, in plain terms.</li>
+        <li>Surfaces early warnings and plain-language advisory guidance for at-risk conditions.</li>
+        <li>Lets you simulate scenarios and compare their hazard outcomes side by side.</li>
+      </ul>
+      <h3 style="margin-top:22px;">Architecture</h3>
+      <p style="color:var(--text-1);font-size:13.5px;">The frontend, weather/API layer, scoring engine, and data storage are kept as separate modules so a trained ML backend (Random Forest / XGBoost / LightGBM / LSTM) can be swapped in for the current heuristic scoring function without touching the UI. See <code>window.RS_ENGINE</code> in the page source for the integration point.</p>
+    </div>
+    <div class="card">
+      <h3>Status</h3>
+      <div class="mini-readout">
+        <div class="row"><span class="k">Live weather source</span><span class="v">Open-Meteo API</span></div>
+        <div class="row"><span class="k">Risk scoring</span><span class="v">Demo heuristic</span></div>
+        <div class="row"><span class="k">Trained ML backend</span><span class="v" style="color:var(--high);">Not connected</span></div>
+        <div class="row"><span class="k">History storage</span><span class="v">In-session</span></div>
+      </div>
+      <p class="small-note">This build ships with a clearly labeled demo scoring engine wherever a trained model isn't connected, per project requirement — no prediction on this site is presented as coming from a trained model unless it genuinely is.</p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div id="voicePanel">
+  <div class="vp-title"><span class="vp-dot"></span>Listening…</div>
+  <div class="vp-transcript" id="vpTranscript">Say a command, like "open live weather" or "check Madurai".</div>
+  <div class="vp-hint">Try: "dashboard", "risk map", "run prediction", "weather in Coimbatore", "read warnings", "dark mode", "light mode", "stop listening".</div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-title">RainSentinel</div>
+      <div class="footer-tag">Data-Driven Multi-Hazard Weather Prediction and Decision Support System</div>
+    </div>
+    <div class="footer-nav">
+      <a onclick="go('home')" style="cursor:pointer;">Home</a>
+      <a onclick="go('dashboard')" style="cursor:pointer;">Dashboard</a>
+      <a onclick="go('warning')" style="cursor:pointer;">Early Warning</a>
+      <a onclick="go('about')" style="cursor:pointer;">About</a>
+    </div>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
