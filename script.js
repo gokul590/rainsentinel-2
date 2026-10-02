@@ -424,9 +424,10 @@ function riskColor(level){ return {LOW:'#3cb878',MODERATE:'#e8c547',HIGH:'#f2994
 async function initRiskMap(){
   if(!state.mapObj){
     state.mapObj = L.map('riskMap',{zoomControl:true, attributionControl:true}).setView([10.9,78.4],6.8);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
-      attribution:'&copy; OpenStreetMap &copy; CARTO', maxZoom:11
-    }).addTo(state.mapObj);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'&copy; OpenStreetMap contributors',
+  maxZoom:19
+}).addTo(state.mapObj);
   } else { state.mapObj.invalidateSize(); }
 
   document.getElementById('mapUpdated').textContent = 'Loading live risk for '+LOCATIONS.length+' cities…';
