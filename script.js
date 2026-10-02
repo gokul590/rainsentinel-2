@@ -329,7 +329,10 @@ function refreshDashboardStats(){
 function initDashboardMap(){
   if(state.dbMapObj) { state.dbMapObj.invalidateSize(); return; }
   state.dbMapObj = L.map('dbMap', {zoomControl:false, attributionControl:false}).setView([10.9,78.4], 6.2);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:10}).addTo(state.dbMapObj);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'&copy; OpenStreetMap contributors',
+  maxZoom:19
+}).addTo(state.dbMapObj);
   LOCATIONS.forEach(loc=>{ L.circleMarker([loc.lat,loc.lon],{radius:5,color:'#3fc6cf',fillColor:'#3fc6cf',fillOpacity:0.8,weight:1}).addTo(state.dbMapObj); });
 }
 function renderDbWarnings(){
