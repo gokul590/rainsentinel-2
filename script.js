@@ -154,7 +154,7 @@ function buildIsobars(){
 /* ---------------- Weather API (Open-Meteo, no key required) ---------------- */
 async function apiFetchCurrent(lat,lon){
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,pressure_msl,cloud_cover,weather_code&timezone=auto`;
-  const res = await /api/newsurl);
+  const res = await fetch(url);
   if(!res.ok) throw new Error('Weather API error '+res.status);
   return res.json();
 }
