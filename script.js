@@ -112,7 +112,7 @@ const state = {
 /* ---------------- Nav ---------------- */
 const NAV = [
   ['home','Home'],['dashboard','Dashboard'],['live','Live Weather'],['prediction','Prediction'],
-  ['forecast','Forecast'],['map','Risk Map'],['warning','Early Warning'],['whatif','What-If Simulator'],
+  ['forecast','Forecast'],['media','Media'],['map','Risk Map'],['warning','Early Warning'],['whatif','What-If Simulator'],
   ['insights','AI Insights'],['history','History'],['about','About']
 ];
 function buildNav(){
