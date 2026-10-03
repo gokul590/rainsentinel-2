@@ -154,7 +154,34 @@
   </div>
 </section>
 
-<!-- ========================= PREDICTION ========================= -->
+<!-- ========================= MEDIA INFORMATION ========================= -->
+<section class="view" id="view-media">
+
+  <div class="eyebrow">Live Information</div>
+
+  <h1 class="page-title">📰 Media & Weather Information</h1>
+
+  <p class="page-sub">
+    Latest rainfall, flood, cyclone and weather-related news.
+  </p>
+
+  <div class="card">
+
+    <h3>
+      Latest Media Alerts -
+      <span id="mediaLocation">Chennai</span>
+    </h3>
+
+    <div id="mediaStatus" class="small-note">
+      Loading latest media information...
+    </div>
+
+    <div id="mediaNewsList"></div>
+
+  </div>
+
+</section>
+  <!-- ========================= PREDICTION ========================= -->
 <section class="view" id="view-prediction">
   <div class="eyebrow">Hazard scoring</div>
   <h1 class="page-title">Prediction Dashboard</h1>
@@ -180,13 +207,13 @@
       <div id="liveInputsNote" style="display:none;">
         <p style="color:var(--text-1);font-size:13.5px;">Live prediction uses the most recent fetch from the Live Weather page as model input.</p>
         <div class="mini-readout" id="livePredSnapshot" style="margin-bottom:14px;"></div>
-        <button class="btn primary" style="width:100%;" onclick="runLivePrediction()">Generate live prediction</button>
+        <button class="btn primary" style="width:100%;" onclick="runLive()">Generate live </button>
       </div>
     </div>
 
     <div>
       <div class="grid" style="grid-template-columns:repeat(2,1fr);">
-        <div class="card"><div class="card-label">Rainfall prediction</div><div class="stat-num" id="predRainOut">—<span class="stat-unit">mm</span></div></div>
+        <div class="card"><div class="card-label">Rainfall </div><div class="stat-num" id="predRainOut">—<span class="stat-unit">mm</span></div></div>
         <div class="card"><div class="card-label">Flood risk</div><div id="predFloodOut" style="margin-top:6px;">—</div></div>
         <div class="card"><div class="card-label">Crop damage risk</div><div id="predCropOut" style="margin-top:6px;">—</div></div>
         <div class="card"><div class="card-label">Overall hazard level</div><div id="predOverallOut" style="margin-top:6px;">—</div></div>
