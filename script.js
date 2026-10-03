@@ -132,6 +132,7 @@ function go(id){
   if(id==='whatif') renderWhatIf();
   if(id==='insights') renderInsights();
   if(id==='media') loadMediaAlerts('Chennai');
+   if(id==='media') loadLiveVideos();
 }
 
 /* ---------------- Clock ---------------- */
@@ -266,9 +267,24 @@ async function loadMediaAlerts(location) {
 
     console.error('Media error:', error);
 
-    statusEl.textContent =
+        statusEl.textContent =
       'Unable to load live media information.';
   }
+}
+
+async function loadLiveVideos() {
+  const videoList = document.getElementById('liveVideoList');
+
+  if (!videoList) return;
+
+  videoList.innerHTML = `
+    <div class="card" style="margin-top:12px;padding:15px;">
+      <h3>📺 Weather Live Updates</h3>
+      <p>
+        Live weather video updates will be shown here.
+      </p>
+    </div>
+  `;
 }
 function renderLiveWeather(){
   const d = state.liveData; if(!d) return;
