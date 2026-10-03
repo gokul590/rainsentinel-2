@@ -131,7 +131,7 @@ function go(id){
   if(id==='forecast' && !state.forecastData) loadForecast();
   if(id==='whatif') renderWhatIf();
   if(id==='insights') renderInsights();
-  if(id==='history') renderHistory();
+  if(id==='media') loadMediaAlerts('Chennai');
 }
 
 /* ---------------- Clock ---------------- */
