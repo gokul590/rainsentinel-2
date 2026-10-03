@@ -207,6 +207,69 @@ async function fetchLiveWeather(){
     statusEl.textContent = 'Could not reach the weather service — check your network settings. ('+e.message+')';
   }
 }
+async function loadMediaAlerts(location) {
+  const statusEl = document.getElementById('mediaStatus');
+  const listEl = document.getElementById('mediaNewsList');
+  const locationEl = document.getElementById('mediaLocation');
+
+  if (!statusEl || !listEl) return;
+
+  locationEl.textContent = location;
+  statusEl.textContent = 'Loading latest media information...';
+
+  try {
+    const response = await fetch(
+      `/api/news?location=${encodeURIComponent(location)}`
+    );
+
+    if (!response.ok) {
+      throw new Error('News API error: ' + response.status);
+    }
+
+    const data = await response.json();
+
+    if (!data.articles || data.articles.length === 0) {
+      statusEl.textContent = 'No recent weather news found.';
+      return;
+    }
+
+    statusEl.textContent =
+      `${data.articles.length} recent news reports found.`;
+
+    listEl.innerHTML = data.articles.slice(0, 5).map(article => `
+      <div class="card" style="margin-top:12px;padding:15px;">
+
+        <h3>${article.title || 'Weather News'}</h3>
+
+        <p>
+          ${article.description || 'No description available.'}
+        </p>
+
+        <div class="small-note">
+          Source: ${article.source?.name || 'News source'}
+        </div>
+
+        <a
+          href="${article.url}"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn"
+          style="display:inline-block;margin-top:10px;"
+        >
+          Read Full News →
+        </a>
+
+      </div>
+    `).join('');
+
+  } catch (error) {
+
+    console.error('Media error:', error);
+
+    statusEl.textContent =
+      'Unable to load live media information.';
+  }
+}
 function renderLiveWeather(){
   const d = state.liveData; if(!d) return;
   document.getElementById('liveLocLabel').textContent = d.label;
